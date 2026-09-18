@@ -1,103 +1,20 @@
-import Image from "next/image";
+"use client";
+import { useEffect, useState } from "react";
+import { ActionId, GameState } from "@/types/game";
+import { initialState, loadGame, performAction, resetGame, saveGame } from "@/lib/gameLogic";
+import { getVillage } from "@/data/villages";
+import StatusPanel from "@/components/StatusPanel";
+import ActionPanel from "@/components/ActionPanel";
+import LogPanel from "@/components/LogPanel";
+import VillagePanel from "@/components/VillagePanel";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+  const [state, setState] = useState<GameState>(initialState);
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => { setState(loadGame() ?? initialState); setHydrated(true); }, []);
+  useEffect(() => { if (hydrated) saveGame(state); }, [state, hydrated]);
+  const act = (id: ActionId) => setState((current) => performAction(current, id));
+  const handleReset = () => { if (window.confirm("모든 기록을 초기화할까요?")) { resetGame(); setState(initialState); } };
+  const village = getVillage(state.villageId);
+  return <main className="game-shell"><header className="topbar"><div className="brand"><div className="brand-mark">✦</div><div><span>ETHER CHRONICLE</span><h1>용맥의 기록</h1></div></div><div className="story-status"><span className="status-dot" /> 제1막 · 작은 선택의 흔적</div><button className="reset-button" onClick={handleReset}>↻ 새 기록</button></header><div className="hero"><div><div className="eyebrow">A TEXT-BASED 2D RPG PROTOTYPE</div><h2>{village.name}<span>에서 시작되는 이야기</span></h2><p>{village.description}</p></div><div className="hero-symbol">{village.icon}</div></div><div className="game-layout"><aside><StatusPanel state={state} /><VillagePanel state={state} /></aside><section className="main-column"><ActionPanel state={state} onAction={act} /><LogPanel logs={state.log} /></section></div><footer><span>LOCAL SAVE · 브라우저에 자동 저장됩니다</span><span>DRAGON-TEXT-RPG / VERTICAL PROTOTYPE</span></footer></main>;
 }
